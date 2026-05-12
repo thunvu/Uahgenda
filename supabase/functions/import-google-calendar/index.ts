@@ -5,15 +5,11 @@ type ScheduleEvent = {
   id: string;
   summary: string;
   starts_on: string;
-  ends_on: string;
   start_time: string;
   end_time: string;
   room: string | null;
   address: string | null;
   recurrence_rule: string;
-  class_name: string | null;
-  campus: string | null;
-  raw: Record<string, unknown>;
 };
 
 function googleDateTime(date: string, time: string) {
@@ -30,19 +26,33 @@ function buildGoogleEvent(event: ScheduleEvent) {
     location: [event.room, event.address].filter(Boolean).join(" - "),
     start: {
       dateTime: googleDateTime(event.starts_on, event.start_time),
-      timeZone: "Asia/Ho_Chi_Minh"
+      timeZone: "Asia/Ho_Chi_Minh",
     },
     end: {
       dateTime: googleDateTime(event.starts_on, event.end_time),
-      timeZone: "Asia/Ho_Chi_Minh"
+      timeZone: "Asia/Ho_Chi_Minh",
     },
     recurrence: [`RRULE:${normalizeRecurrenceRule(event.recurrence_rule)}`],
     extendedProperties: {
       private: {
-        uahgendaEventId: event.id
-      }
-    }
+        uahgendaEventId: event.id,
+      },
+    },
   };
+}
+
+function isValidEvent(event: unknown): event is ScheduleEvent {
+  if (!event || typeof event !== "object") return false;
+  const nextEvent = event as Partial<ScheduleEvent>;
+
+  return [
+    nextEvent.id,
+    nextEvent.summary,
+    nextEvent.starts_on,
+    nextEvent.start_time,
+    nextEvent.end_time,
+    nextEvent.recurrence_rule,
+  ].every((value) => typeof value === "string" && value.length > 0);
 }
 
 async function createGoogleCalendar(accessToken: string, calendarName: string) {
@@ -50,12 +60,12 @@ async function createGoogleCalendar(accessToken: string, calendarName: string) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       summary: calendarName || "Thời khóa biểu UAH",
-      timeZone: "Asia/Ho_Chi_Minh"
-    })
+      timeZone: "Asia/Ho_Chi_Minh",
+    }),
   });
 
   const data = await response.json().catch(() => ({}));
@@ -85,8 +95,8 @@ async function refreshGoogleToken(refreshToken: string) {
       client_id: clientId,
       client_secret: clientSecret,
       refresh_token: refreshToken,
-      grant_type: "refresh_token"
-    })
+      grant_type: "refresh_token",
+    }),
   });
 
   const data = await response.json();
@@ -96,7 +106,8 @@ async function refreshGoogleToken(refreshToken: string) {
 
   return {
     accessToken: data.access_token as string,
-    expiresAt: new Date(Date.now() + Number(data.expires_in || 3600) * 1000).toISOString()
+    expiresAt: new Date(Date.now() + Number(data.expires_in || 3600) * 1000)
+      .toISOString(),
   };
 }
 
@@ -123,7 +134,7 @@ Deno.serve(async (req) => {
   }
 
   const authClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } }
+    global: { headers: { Authorization: authHeader } },
   });
   const { data: userResult, error: userError } = await authClient.auth.getUser();
 
@@ -131,9 +142,12 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
-  const { scheduleId, calendarName = "Thời khóa biểu UAH" } = await req.json();
-  if (!scheduleId) {
-    return jsonResponse({ error: "Missing scheduleId" }, 400);
+  const { calendarName = "Thời khóa biểu UAH", events = [] } = await req.json();
+  if (!Array.isArray(events) || events.length === 0) {
+    return jsonResponse({ error: "Missing schedule events" }, 400);
+  }
+  if (!events.every(isValidEvent)) {
+    return jsonResponse({ error: "Invalid schedule events" }, 400);
   }
 
   const serviceClient = createClient(supabaseUrl, serviceRoleKey);
@@ -151,7 +165,9 @@ Deno.serve(async (req) => {
 
   try {
     let accessToken = connection.access_token;
-    const expiresAt = connection.expires_at ? new Date(connection.expires_at).getTime() : 0;
+    const expiresAt = connection.expires_at
+      ? new Date(connection.expires_at).getTime()
+      : 0;
 
     if (!accessToken || expiresAt < Date.now() + 60_000) {
       if (!connection.refresh_token) {
@@ -168,17 +184,6 @@ Deno.serve(async (req) => {
     }
 
     const calendarId = await createGoogleCalendar(accessToken, calendarName);
-
-    const { data: events, error: eventsError } = await serviceClient
-      .from("schedule_events")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("schedule_id", scheduleId)
-      .order("starts_on", { ascending: true });
-
-    if (eventsError) throw eventsError;
-    if (!events?.length) throw new Error("Schedule has no events");
-
     let insertedCount = 0;
 
     for (const event of events as ScheduleEvent[]) {
@@ -188,10 +193,10 @@ Deno.serve(async (req) => {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(buildGoogleEvent(event))
-        }
+          body: JSON.stringify(buildGoogleEvent(event)),
+        },
       );
 
       if (!response.ok) {
@@ -201,14 +206,6 @@ Deno.serve(async (req) => {
 
       insertedCount += 1;
     }
-
-    const { error: deleteScheduleError } = await serviceClient
-      .from("schedules")
-      .delete()
-      .eq("id", scheduleId)
-      .eq("user_id", userId);
-
-    if (deleteScheduleError) throw deleteScheduleError;
 
     return jsonResponse({ insertedCount, calendarId });
   } catch (error) {

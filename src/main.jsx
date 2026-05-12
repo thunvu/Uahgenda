@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { importScheduleToGoogle, saveSchedule } from "./lib/scheduleRepository";
+import { importScheduleToGoogle } from "./lib/scheduleRepository";
 import {
   isSupabaseConfigured,
   persistGoogleConnection,
@@ -271,16 +271,11 @@ function App() {
     setStatusMessage("");
 
     try {
-      const scheduleId = await saveSchedule({
-        title: importCalendarName.trim() || "Thời khóa biểu UAH",
-        rawText,
+      const result = await importScheduleToGoogle({
         entries,
         durationMinutes: CLASS_DURATION_MINUTES,
+        calendarName: importCalendarName.trim() || "Thời khóa biểu UAH",
       });
-      const result = await importScheduleToGoogle(
-        scheduleId,
-        importCalendarName.trim() || "Thời khóa biểu UAH",
-      );
       setIsImportDialogOpen(false);
       setStatusMessage(
         `Đã import ${result.insertedCount || 0} sự kiện vào Google Calendar.`,

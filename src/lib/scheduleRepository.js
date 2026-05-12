@@ -1,19 +1,10 @@
 import { supabase } from "./supabaseClient";
 
-const WEEKDAY_LABELS = {
-  MO: "Thứ Hai",
-  TU: "Thứ Ba",
-  WE: "Thứ Tư",
-  TH: "Thứ Năm",
-  FR: "Thứ Sáu",
-  SA: "Thứ Bảy",
-  SU: "Chủ Nhật"
-};
-
 function toDateValue(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const nextDate = new Date(date);
+  const year = nextDate.getFullYear();
+  const month = String(nextDate.getMonth() + 1).padStart(2, "0");
+  const day = String(nextDate.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -25,100 +16,61 @@ function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60 * 1000);
 }
 
-async function sha256(text) {
-  const bytes = new TextEncoder().encode(text);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
+function toGoogleImportEvent(entry, index, durationMinutes) {
+  const start = new Date(entry.startDate);
+  start.setHours(entry.startTime.hour, entry.startTime.minute, 0, 0);
+  const end = addMinutes(start, durationMinutes);
+  const endsOn = toDateValue(entry.endDate);
+
+  return {
+    id: `uahgenda-${index}-${toDateValue(entry.startDate)}`,
+    summary: entry.name,
+    starts_on: toDateValue(entry.startDate),
+    start_time: toTimeValue(start),
+    end_time: toTimeValue(end),
+    room: entry.room || null,
+    address: entry.address || null,
+    recurrence_rule: `FREQ=WEEKLY;BYDAY=${entry.weekday};UNTIL=${endsOn.replaceAll("-", "")}T235959Z`,
+  };
 }
 
-export async function saveSchedule({ title, rawText, entries, durationMinutes }) {
+export async function importScheduleToGoogle({
+  entries,
+  durationMinutes,
+  calendarName = "Thá»i khÃ³a biá»ƒu UAH",
+}) {
   if (!supabase) {
-    throw new Error("Supabase chưa được cấu hình.");
+    throw new Error("Supabase chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh.");
   }
 
-  const { data: userResult, error: userError } = await supabase.auth.getUser();
-  if (userError) throw userError;
-  if (!userResult.user) {
-    throw new Error("Bạn cần đăng nhập Google trước khi lưu lịch.");
-  }
-
-  const userId = userResult.user.id;
-  const sourceHash = await sha256(rawText);
-
-  const { data: schedule, error: scheduleError } = await supabase
-    .from("schedules")
-    .insert({
-      user_id: userId,
-      title,
-      source_hash: sourceHash,
-      event_count: entries.length
-    })
-    .select("id")
-    .single();
-
-  if (scheduleError) throw scheduleError;
-
-  const rows = entries.map((entry) => {
-    const start = new Date(entry.startDate);
-    start.setHours(entry.startTime.hour, entry.startTime.minute, 0, 0);
-    const end = addMinutes(start, durationMinutes);
-
-    return {
-      schedule_id: schedule.id,
-      user_id: userId,
-      summary: entry.name,
-      class_name: entry.className || null,
-      credits: Number(entry.credits) || null,
-      weekday: entry.weekday,
-      starts_on: toDateValue(entry.startDate),
-      ends_on: toDateValue(entry.endDate),
-      start_time: toTimeValue(start),
-      end_time: toTimeValue(end),
-      room: entry.room || null,
-      campus: entry.campus || null,
-      address: entry.address || null,
-      recurrence_rule: `FREQ=WEEKLY;BYDAY=${entry.weekday};UNTIL=${toDateValue(entry.endDate).replaceAll("-", "")}T235959Z`,
-      raw: {
-        day: entry.day || WEEKDAY_LABELS[entry.weekday],
-        period: entry.period,
-        weeks: entry.weeks,
-        rawName: entry.rawName
-      }
-    };
-  });
-
-  const { error: eventsError } = await supabase.from("schedule_events").insert(rows);
-  if (eventsError) throw eventsError;
-
-  return schedule.id;
-}
-
-export async function importScheduleToGoogle(scheduleId, calendarName = "Thời khóa biểu UAH") {
-  if (!supabase) {
-    throw new Error("Supabase chưa được cấu hình.");
-  }
-
-  const { data: sessionResult, error: sessionError } = await supabase.auth.getSession();
+  const { data: sessionResult, error: sessionError } =
+    await supabase.auth.getSession();
   if (sessionError) throw sessionError;
   if (!sessionResult.session?.access_token) {
-    throw new Error("Bạn cần đăng nhập Google trước khi import lịch.");
+    throw new Error("Báº¡n cáº§n Ä‘Äƒng nháº­p Google trÆ°á»›c khi import lá»‹ch.");
   }
 
-  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-google-calendar`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${sessionResult.session.access_token}`
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-google-calendar`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${sessionResult.session.access_token}`,
+      },
+      body: JSON.stringify({
+        calendarName,
+        events: entries.map((entry, index) =>
+          toGoogleImportEvent(entry, index, durationMinutes),
+        ),
+      }),
     },
-    body: JSON.stringify({ scheduleId, calendarName })
-  });
+  );
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || "Không import được Google Calendar.");
+    throw new Error(data.error || "KhÃ´ng import Ä‘Æ°á»£c Google Calendar.");
   }
 
   return data;
