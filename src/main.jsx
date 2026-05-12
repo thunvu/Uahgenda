@@ -393,10 +393,29 @@ function App() {
             Hoặc import trực tiếp nếu bạn đã đăng nhập bằng tài khoản Google ở
             trên.
           </h2>
-          <p>Lưu ý: Việc đăng nhập bằng google có thể bị giới hạn, khi đó hãy import thủ công.</p>
-          <h5>Trang web này không thu thập, lưu trữ hoặc chia sẻ bất kỳ thông tin cá nhân nào của người dùng. Toàn bộ dữ liệu bạn nhập chỉ được xử lý trực tiếp trên trình duyệt nhằm tạo lịch học và không được gửi đến máy chủ bên ngoài.</h5>
-            <h5>Dự án là mã nguồn mở, bạn có thể kiểm tra toàn bộ mã nguồn tại GitHub:
-https://github.com/thunvu/Uahgenda</h5>
+          <p>
+            Lưu ý: Việc đăng nhập bằng google có thể bị giới hạn, khi đó hãy
+            import thủ công.
+          </p>
+          <h5>
+            Trang web này không thu thập, lưu trữ hoặc chia sẻ bất kỳ thông tin
+            cá nhân nào của người dùng. Toàn bộ dữ liệu bạn nhập chỉ được xử lý
+            trực tiếp trên trình duyệt nhằm tạo lịch học và không được gửi đến
+            máy chủ bên ngoài.
+          </h5>
+          <h5>
+            Dự án là mã nguồn mở, bạn có thể kiểm tra toàn bộ mã nguồn tại
+            GitHub:
+          </h5>
+          <p>
+            <a
+              href="https://github.com/thunvu/Uahgenda"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              https://github.com/thunvu/Uahgenda
+            </a>
+          </p>
         </aside>
       </section>
 
