@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://uahgenda.vercel.app/sitemap.xml
