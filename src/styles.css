@@ -112,6 +112,25 @@ h2 {
   color: #52606d;
 }
 
+.googleLoginButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: #4285f4;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.googleLoginButton img {
+  width: 18px;
+  height: 18px;
+  display: block;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
 .inputPanel,
 .guide,
 .preview {

@@ -9,6 +9,7 @@ import {
   supabase,
 } from "./lib/supabaseClient";
 import "./styles.css";
+import googleLogo from "../googlelogo.png";
 
 const WEEKDAYS = {
   "thứ hai": "MO",
@@ -327,15 +328,12 @@ function App() {
               <span>
                 Đăng nhập để lưu lịch và import trực tiếp vào Google Calendar.
               </span>
-              <button type="button" onClick={signInWithGoogle}
-              style={{
-                  backgroundColor: "#4285F4",
-                  color: "white",
-                  padding: "10px 16px",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                }}>
+              <button
+                className="googleLoginButton"
+                type="button"
+                onClick={signInWithGoogle}
+              >
+                <img src={googleLogo} alt="" aria-hidden="true" />
                 Đăng nhập Google
               </button>
             </>
