@@ -296,11 +296,13 @@ function App() {
     <main className="app">
       <section className="hero">
         <div>
-          <p className="eyebrow">UAHgenda</p>
-          <p className="subcopy">
+          <p className="eyebrow">
+            <span>UAH</span>genda
+          </p>
+          <h4 className="subcopy">
             Vào mục TKB HỌC KỲ ở trang lịch học và copy toàn bộ nội dung
             (Ctrl+A, Ctrl+C) rồi dán vào ô bên dưới.
-          </p>
+          </h4>
         </div>
         <div className="stats" aria-label="Kết quả đọc dữ liệu">
           <div>
@@ -387,7 +389,7 @@ function App() {
           <h2>Google Calendar</h2>
           <ol>
             <li>
-              Tải file <strong>uahgenda.ics</strong>.
+              Tải file <strong>.ics</strong>.
             </li>
             <li>Mở Google Calendar, vào Settings.</li>
             <li>Chọn Import & export, tải file lên lịch mong muốn.</li>
@@ -396,6 +398,7 @@ function App() {
             Hoặc import trực tiếp nếu bạn đã đăng nhập bằng tài khoản Google ở
             trên.
           </h2>
+          <p>Lưu ý: Việc đăng nhập bằng google có thể bị giới hạn, khi đó hãy import thủ công.</p>
         </aside>
       </section>
 
