@@ -327,7 +327,15 @@ function App() {
               <span>
                 Đăng nhập để lưu lịch và import trực tiếp vào Google Calendar.
               </span>
-              <button type="button" onClick={signInWithGoogle}>
+              <button type="button" onClick={signInWithGoogle}
+              style={{
+                  backgroundColor: "#4285F4",
+                  color: "white",
+                  padding: "10px 16px",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                }}>
                 Đăng nhập Google
               </button>
             </>
