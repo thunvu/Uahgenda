@@ -403,19 +403,7 @@ function App() {
             trực tiếp trên trình duyệt nhằm tạo lịch học và không được gửi đến
             máy chủ bên ngoài.
           </h5>
-          <h5>
-            Dự án là mã nguồn mở, bạn có thể kiểm tra toàn bộ mã nguồn tại
-            GitHub:
-          </h5>
-          <p>
-            <a
-              href="https://github.com/thunvu/Uahgenda"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              https://github.com/thunvu/Uahgenda
-            </a>
-          </p>
+          
         </aside>
       </section>
 
